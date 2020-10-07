@@ -53,8 +53,8 @@ while [ ${count} -lt ${loop_guard} ]; do
         echo "`date` INFO: ${APP}- Setting active broker to ${solace_backup_broker}"
         break
     fi
-    echo "`date` INFO: ${APP}-Waited ${run_time} seconds, Primary reports ${solace_primary_broker} Backup report ${solace_backup_broker}"
-    ((count++))
+    echo "`date` INFO: ${APP}-Waited ${run_time} seconds, Primary: ${solace_primary_broker} reports: ${health_result_primary} Backup: ${solace_backup_broker} reports: ${health_result_backup}"
+    let "count=count+1"
     sleep ${pause}
 done
 
