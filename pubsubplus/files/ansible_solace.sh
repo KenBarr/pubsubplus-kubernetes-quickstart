@@ -1,34 +1,7 @@
 #!/bin/sh
 APP=`basename "$0"`
-#Set up Python
-PYTHONUNBUFFERED=1
-apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python
-python3 -m ensurepip
-pip3 install --no-cache --upgrade pip setuptools
-#Install Ansible
-apk add ansible
-#Add Solace and tools
-pip3 install --upgrade ansible-solace
-apk add curl
-apk add bash
 
-ANSIBLE_PYTHON_INTERPRETER=/usr/bin/python3
-
-cd ~
-#wget https://raw.githubusercontent.com/solace-iot-team/ansible-solace/master/project-template/playbook.yml
-cp /mnt/disks/solace/playbook.yml .
-wget https://raw.githubusercontent.com/solace-iot-team/ansible-solace/master/project-template/broker.inventory.yml
-wget https://raw.githubusercontent.com/solace-iot-team/ansible-solace/master/project-template/run.sh
-wget https://raw.githubusercontent.com/solace-iot-team/ansible-solace/master/.lib/run.project-env.sh
-wget https://raw.githubusercontent.com/solace-iot-team/ansible-solace/master/.lib/functions.sh
-mkdir .lib
-mv run.project-env.sh .lib
-mv functions.sh .lib
-chmod +x run.sh
-# comment out wait4key
-sed -i 's/x=$(showEnv)/#x=$(showEnv)/' run.sh
-sed -i 's/x=$(wait4Key)/#x=$(wait4Key)/' run.sh
-
+ansible_workspace="/tmp/ansible_workspace"
 solace_pw=`cat /mnt/disks/secrets/username_admin_password`
 solace_primary_broker=${STATEFULSET_NAME}-0.${STATEFULSET_NAME}-discovery.${STATEFULSET_NAMESPACE}.svc
 solace_backup_broker=${STATEFULSET_NAME}-1.${STATEFULSET_NAME}-discovery.${STATEFULSET_NAMESPACE}.svc
@@ -59,10 +32,18 @@ while [ ${count} -lt ${loop_guard} ]; do
 done
 
 echo "`date` INFO: ${APP}- Setting sempv2_host to: ${solace_active_broker}"
-sed -i "s/sempv2_host: localhost/sempv2_host: ${solace_active_broker}/" broker.inventory.yml
-sed -i "s/sempv2_password: admin/sempv2_password: ${solace_pw}/" broker.inventory.yml
 
-./run.sh
+mkdir ${ansible_workspace}
+cd ${ansible_workspace}
+cp /mnt/disks/solace/broker_inventory.yml  ${ansible_workspace}/broker_inventory.yml
+
+sed -i "s/sempv2_host: localhost/sempv2_host: ${solace_active_broker}/" ${ansible_workspace}/broker.inventory.yml
+sed -i "s/sempv2_password: admin/sempv2_password: ${solace_pw}/" ${ansible_workspace}/broker.inventory.yml
+
+export ANSIBLE_SOLACE_ENABLE_LOGGING=True
+export ANSIBLE_SOLACE_LOG_PATH="$WORKING_DIR/ansible-solace.log"
+ansible-playbook -i "${ansible_workspace}/broker.inventory.yml" "/mnt/disks/solace/playbook.yml"  --extra-vars "AUTO_RUN=$AUTO_RUN"
+  code=$?; if [[ $code != 0 ]]; then echo ">>> ERROR - $code"; exit 1; fi
 
 while [ 1 ]; do
  sleep 30
