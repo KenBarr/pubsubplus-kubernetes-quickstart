@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: ansible-solace
-        image: alpine:latest
+        image: kenbarr/ansible-solace:0.6
         env:
          - name: STATEFULSET_NAME
            value: {{ template "solace.fullname" . }}
