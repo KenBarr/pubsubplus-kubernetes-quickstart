@@ -41,8 +41,8 @@ sed -i "s/sempv2_host: localhost/sempv2_host: ${solace_active_broker}/" ${ansibl
 sed -i "s/sempv2_password: admin/sempv2_password: ${solace_pw}/" ${ansible_workspace}/broker_inventory.yml
 
 export ANSIBLE_SOLACE_ENABLE_LOGGING=True
-export ANSIBLE_SOLACE_LOG_PATH="$WORKING_DIR/ansible-solace.log"
-ansible-playbook -i "${ansible_workspace}/broker_inventory.yml" "/mnt/disks/solace/playbook.yml"  --extra-vars "AUTO_RUN=$AUTO_RUN"
+export ANSIBLE_SOLACE_LOG_PATH="${ansible_workspace}/ansible-solace.log"
+ansible-playbook -vvv -i "${ansible_workspace}/broker_inventory.yml" "/mnt/disks/solace/playbook.yml"  --extra-vars "AUTO_RUN=$AUTO_RUN"
   code=$?; if [[ $code != 0 ]]; then echo ">>> ERROR - $code"; exit 1; fi
 
 while [ 1 ]; do
